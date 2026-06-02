@@ -1,0 +1,24 @@
+.git
+.gitignore
+.DS_Store
+.vscode
+.idea
+__pycache__
+*.pyc
+*.pyo
+.venv
+venv
+env
+
+# Generated PacketScope artifacts — not needed inside the image
+reports/
+
+# Local-only / repo docs
+docs/
+README.md
+PRODUCT.md
+Makefile
+Procfile
+render.yaml
+runtime.txt
+tests/

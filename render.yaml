@@ -1,9 +1,8 @@
 services:
   - type: web
     name: packetscope-live-lab
-    env: python
+    env: docker
     plan: free
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "python3 -m packetscope web --host 0.0.0.0 --port $PORT"
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     autoDeploy: true
