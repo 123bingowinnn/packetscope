@@ -10,7 +10,12 @@
   <main class="app-shell">
     <header class="site-header">
       <div class="brand-lockup">
-        <div class="brand-mark">PS</div>
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3.2"></circle>
+            <path d="M12 2v3.2M12 18.8V22M2 12h3.2M18.8 12H22M4.93 4.93l2.26 2.26M16.81 16.81l2.26 2.26M4.93 19.07l2.26-2.26M16.81 7.19l2.26-2.26"></path>
+          </svg>
+        </div>
         <div>
           <h1 data-i18n="appTitle">PacketScope</h1>
           <p data-i18n="appSubtitle">Website Network Diagnostics</p>
@@ -212,4 +217,39 @@
 
       <section class="analysis-section technical-section">
         <details open>
-          <summary data-i18n="technicalSummary">Technica
+          <summary data-i18n="technicalSummary">Technical evidence table</summary>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th data-i18n="targetCol">Target</th>
+                  <th data-i18n="resolvedCol">Resolved IPs</th>
+                  <th>DNS</th>
+                  <th>TCP</th>
+                  <th>TLS</th>
+                  <th>HTTP</th>
+                  <th data-i18n="pingCol">Ping</th>
+                  <th data-i18n="lossCol">Loss</th>
+                  <th data-i18n="hopsCol">Hops</th>
+                  <th data-i18n="statusCol">Status</th>
+                  <th data-i18n="successCol">Success</th>
+                </tr>
+              </thead>
+              <tbody id="detailsRows"></tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <section class="analysis-section technical-section">
+        <details>
+          <summary data-i18n="traceTitle">Raw traceroute evidence</summary>
+          <div id="traceList"></div>
+        </details>
+      </section>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

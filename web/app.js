@@ -651,4 +651,340 @@ function renderCheckingState(targets) {
   els.resultsSurface.hidden = false;
   els.answerHeadline.textContent = t("runningButton");
   els.findingText.textContent = targets.join(" vs ");
-  els.winnerPill.textContent = 
+  els.winnerPill.textContent = "0.0s";
+  els.compareInsight.textContent = mode === "compare" ? targets.join(" vs ") : t("emptyCompare");
+  els.compareSection.hidden = mode !== "compare";
+}
+
+function renderJourneyTrack(results = []) {
+  const primary = results[0];
+  const metrics = primary ? stageMetrics(primary) : {};
+  els.journeyTrack.innerHTML = journeySteps().map((step, index) => {
+    const value = metrics[step.key];
+    const state = primary ? "complete" : "";
+    return `<article class="journey-step ${state}">
+      <div class="journey-number">${index + 1}</div>
+      <strong>${escapeHtml(step.title)}</strong>
+      <span>${escapeHtml(step.copy)}</span>
+      <em>${escapeHtml(value == null ? "-" : formatSmartTime(value))}</em>
+    </article>`;
+  }).join("");
+}
+
+function journeySteps() {
+  return [
+    { key: "dns", short: "DNS", title: t("address"), copy: t("conceptDns") },
+    { key: "tcp", short: "TCP", title: t("connect"), copy: t("conceptTcp") },
+    { key: "tls", short: "TLS", title: t("secure"), copy: t("conceptTls") },
+    { key: "http", short: "HTTP", title: t("wait"), copy: t("conceptHttp") },
+    { key: "ping", short: "RTT", title: t("rtt"), copy: t("conceptRtt") },
+    { key: "trace", short: "Route", title: t("route"), copy: t("conceptRoute") },
+  ];
+}
+
+function courseConcepts() {
+  if (lang === "zh") {
+    return [
+      { title: "DNS 解析", layer: "应用层支持服务", copy: "把用户输入的域名解析成一个或多个 IP 地址，并记录解析耗时。" },
+      { title: "HTTP / HTTPS", layer: "应用层协议", copy: "发送 HTTP 请求、读取状态码，并在 HTTPS 中测量 TLS 握手。" },
+      { title: "TCP 连接", layer: "传输层", copy: "测量到目标服务器端口 80 或 443 建立可靠连接所需时间。" },
+      { title: "IP 路由", layer: "网络层", copy: "通过 Traceroute 展示从 PacketScope 服务器到目标网站的可见路由跳数。" },
+      { title: "RTT 与丢包", layer: "网络性能", copy: "通过 Ping 估计往返延迟、抖动和丢包率。" },
+      { title: "客户端-服务器模型", layer: "端到端模型", copy: "PacketScope 服务器作为测量客户端，向目标网站服务器发起真实访问。" },
+    ];
+  }
+  return [
+    { title: "DNS resolution", layer: "Application support", copy: "Converts the domain name into one or more IP addresses and records lookup time." },
+    { title: "HTTP / HTTPS", layer: "Application layer", copy: "Sends the HTTP request, reads the status code, and measures TLS for HTTPS." },
+    { title: "TCP connection", layer: "Transport layer", copy: "Measures reliable connection setup to target port 80 or 443." },
+    { title: "IP routing", layer: "Network layer", copy: "Uses traceroute to reveal visible hops from the PacketScope server to the target." },
+    { title: "RTT and loss", layer: "Network performance", copy: "Uses ping to estimate round-trip time, jitter, and packet loss." },
+    { title: "Client-server model", layer: "End-to-end model", copy: "The PacketScope server acts as the measuring client for the target website." },
+  ];
+}
+
+function renderStageGrid(results) {
+  const primary = findFastest(results) || results[0];
+  if (!primary) {
+    els.stageGrid.innerHTML = "";
+    return;
+  }
+  const metrics = [
+    ["DNS", "dns_ms", "dns"],
+    ["TCP", "tcp_ms", "tcp"],
+    ["TLS", "tls_ms", "tls"],
+    ["HTTP", "http_ms", "http"],
+    ["Ping", "ping_avg_ms", "ping"],
+    [t("packetLoss"), "packet_loss_percent", "loss"],
+  ];
+  els.stageGrid.innerHTML = metrics.map(([label, key, hint]) => {
+    const value = key === "packet_loss_percent" ? formatPercent(primary[key]) : formatSmartTime(primary[key]);
+    return `<article class="stage-card">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <small>${escapeHtml(hint === "loss" ? t("packetLoss") : t(hint))}</small>
+    </article>`;
+  }).join("");
+}
+
+function renderConceptGrid() {
+  els.conceptGrid.innerHTML = courseConcepts().map(item => `<article class="concept-card">
+    <span>${escapeHtml(item.layer)}</span>
+    <strong>${escapeHtml(item.title)}</strong>
+    <p>${escapeHtml(item.copy)}</p>
+  </article>`).join("");
+}
+
+function renderLatencyCharts(results) {
+  const maxValue = Math.max(1, ...results.flatMap(result => metricKeys.map(([, key]) => Number(result[key]) || 0)));
+  els.latencyCharts.innerHTML = results.map(result => {
+    const rows = metricKeys.map(([label, key]) => {
+      const value = result[key];
+      const width = value == null ? 0 : Math.max(2, (Number(value) / maxValue) * 100);
+      return `<div class="bar-row">
+        <span>${label}</span>
+        <div class="bar-track"><div class="bar-fill" style="width: ${width}%"></div></div>
+        <span>${formatMs(value)}</span>
+      </div>`;
+    }).join("");
+    return `<article class="target-chart">
+      <h3>${escapeHtml(result.target)}</h3>
+      ${rows}
+    </article>`;
+  }).join("");
+}
+
+function renderDiagnosis(items) {
+  els.diagnosisList.innerHTML = items.map(item => {
+    const evidence = (item.evidence || []).map(line => `<li>${escapeHtml(line)}</li>`).join("");
+    return `<article class="diagnosis-card">
+      <h3>${escapeHtml(item.target)}</h3>
+      <p>${escapeHtml(t("diagnosisCopy")(item))}</p>
+      <ul class="evidence-list">${evidence}</ul>
+    </article>`;
+  }).join("");
+}
+
+function renderDetails(results) {
+  els.detailsRows.innerHTML = results.map(result => `<tr>
+    <td>${escapeHtml(result.target)}</td>
+    <td>${escapeHtml((result.resolved_addresses || []).join(", ") || "N/A")}</td>
+    <td>${formatMs(result.dns_ms)}</td>
+    <td>${formatMs(result.tcp_ms)}</td>
+    <td>${formatMs(result.tls_ms)}</td>
+    <td>${formatMs(result.http_ms)}</td>
+    <td>${formatMs(result.ping_avg_ms)}</td>
+    <td>${formatPercent(result.packet_loss_percent)}</td>
+    <td>${formatValue(result.hop_count)}</td>
+    <td>${formatValue(result.http_status)}</td>
+    <td>${formatPercent(result.success_rate_percent)}</td>
+  </tr>`).join("");
+}
+
+function renderTraces(results) {
+  els.traceList.innerHTML = results.map(result => `<details>
+    <summary>${escapeHtml(result.target)}</summary>
+    <pre>${escapeHtml(result.traceroute_raw || t("noTrace"))}</pre>
+  </details>`).join("");
+}
+
+function renderRouteViz(results) {
+  els.routeViz.innerHTML = results.map(result => {
+    const hops = parseTracerouteHops(result.traceroute_raw || "");
+    if (!hops.length) {
+      return `<article class="route-target">
+        <h3>${escapeHtml(result.target)}</h3>
+        <p class="muted-copy">${escapeHtml(t("noTrace"))}</p>
+      </article>`;
+    }
+    return `<article class="route-target">
+      <h3>${escapeHtml(result.target)}</h3>
+      <div class="hop-strip">
+        ${hops.map(hop => `<div class="hop-node">
+          <strong>Hop ${escapeHtml(hop.number)}</strong>
+          <span>${escapeHtml(hop.label)}</span>
+          <em>${escapeHtml(hop.latency)}</em>
+        </div>`).join("")}
+      </div>
+    </article>`;
+  }).join("");
+}
+
+function parseTracerouteHops(raw) {
+  return raw.split(/\n/).map(line => {
+    const match = line.match(/^\s*(\d+)\s+(.+)$/);
+    if (!match) return null;
+    const body = match[2].trim();
+    const latencies = [...body.matchAll(/(\d+(?:\.\d+)?)\s*ms/g)].map(item => `${item[1]} ms`);
+    const label = body.replace(/\s+\d+(?:\.\d+)?\s*ms/g, "").trim();
+    return {
+      number: match[1],
+      label: label || "*",
+      latency: latencies.join(", ") || "no reply",
+    };
+  }).filter(Boolean);
+}
+
+function renderCompareInsight(comparison, results) {
+  if (!comparison) {
+    els.compareInsight.textContent = t("emptyCompare");
+    return;
+  }
+  const winner = comparison.winner || t("noWinner");
+  const scores = results
+    .map(result => `${result.target}: ${formatMs(result.visible_latency_score_ms)}`)
+    .join(" · ");
+  els.compareInsight.textContent = `${winner} · ${scores}`;
+}
+
+function applyLanguage() {
+  document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+  document.querySelectorAll("[data-i18n]").forEach(node => {
+    const value = t(node.dataset.i18n);
+    if (typeof value === "string") {
+      node.textContent = value;
+    }
+  });
+  const runLabel = els.runButton.querySelector("span");
+  if (runLabel) {
+    runLabel.textContent = els.runButton.disabled ? t("runningButton") : t("runButton");
+  }
+  if (elapsedTimer) {
+    renderPipelineFromLive();
+    renderExecutionLog();
+  } else {
+    renderPipeline(stages.length + 1);
+  }
+  renderJourneyTrack(lastPayload?.results || []);
+  if (lastPayload) {
+    renderResults(lastPayload);
+  } else {
+    renderEmptyState();
+  }
+  renderConceptGrid(lastPayload?.results || []);
+}
+
+function setBusy(isBusy) {
+  els.runButton.disabled = isBusy;
+  const runLabel = els.runButton.querySelector("span");
+  if (runLabel) {
+    runLabel.textContent = isBusy ? t("runningButton") : t("runButton");
+  }
+}
+
+function showError(message) {
+  els.errorSurface.hidden = false;
+  els.errorText.textContent = message;
+}
+
+function hideError() {
+  els.errorSurface.hidden = true;
+  els.errorText.textContent = "";
+}
+
+function findFastest(results) {
+  return results
+    .filter(item => item.visible_latency_score_ms != null)
+    .sort((a, b) => a.visible_latency_score_ms - b.visible_latency_score_ms)[0];
+}
+
+function summaryCard(label, value) {
+  return `<article class="summary-card">
+    <span>${escapeHtml(label)}</span>
+    <strong>${escapeHtml(String(value))}</strong>
+  </article>`;
+}
+
+function average(values) {
+  const known = values.filter(value => value != null).map(Number);
+  if (!known.length) return null;
+  return known.reduce((sum, value) => sum + value, 0) / known.length;
+}
+
+function maxValue(values) {
+  const known = values.filter(value => value != null).map(Number);
+  if (!known.length) return null;
+  return Math.max(...known);
+}
+
+function stageMetrics(result) {
+  return {
+    dns: result.dns_ms,
+    tcp: result.tcp_ms,
+    tls: result.tls_ms,
+    http: result.http_ms,
+    ping: result.ping_avg_ms,
+    trace: traceApproxMs(result),
+    diagnosis: result.visible_latency_score_ms,
+  };
+}
+
+function friendlyLayer(layer) {
+  const map = {
+    dns: t("address"),
+    tcp: t("connect"),
+    tls: t("secure"),
+    http: t("wait"),
+    ping: t("rtt"),
+    unknown: "unknown",
+  };
+  return map[layer] || layer || "unknown";
+}
+
+function traceApproxMs(result) {
+  if (result.duration_ms == null) return null;
+  const known = ["dns_ms", "tcp_ms", "tls_ms", "http_ms", "ping_avg_ms"]
+    .map(key => Number(result[key]) || 0)
+    .reduce((sum, value) => sum + value, 0);
+  return Math.max(0, Number(result.duration_ms) - known);
+}
+
+function updateElapsed() {
+  if (!startedAt) {
+    els.elapsedTimer.textContent = "0.0s";
+    return;
+  }
+  els.elapsedTimer.textContent = formatSeconds(Date.now() - startedAt);
+}
+
+function formatMs(value) {
+  if (value == null || Number.isNaN(Number(value))) return "N/A";
+  return `${Number(value).toFixed(1)} ms`;
+}
+
+function formatPercent(value) {
+  if (value == null || Number.isNaN(Number(value))) return "N/A";
+  return `${Number(value).toFixed(1)}%`;
+}
+
+function formatSeconds(value) {
+  if (value == null || Number.isNaN(Number(value))) return "N/A";
+  return `${(Number(value) / 1000).toFixed(1)}s`;
+}
+
+function formatSmartTime(value) {
+  if (value == null || Number.isNaN(Number(value))) return "N/A";
+  const number = Number(value);
+  if (number >= 1000) {
+    return `${(number / 1000).toFixed(1)}s`;
+  }
+  return `${number.toFixed(1)} ms`;
+}
+
+function formatValue(value) {
+  if (value == null || value === "") return "N/A";
+  return String(value);
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function t(key) {
+  return strings[lang][key] || strings.en[key] || key;
+}
