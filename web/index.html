@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PacketScope Live Lab</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="site-header">
+      <div class="brand-lockup">
+        <div class="brand-mark">PS</div>
+        <div>
+          <h1 data-i18n="appTitle">PacketScope</h1>
+          <p data-i18n="appSubtitle">Website Network Diagnostics</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="server-status"><span></span><strong data-i18n="serverReady">Live server</strong></div>
+        <div class="language-switch" aria-label="Language">
+          <button class="lang-button active" type="button" data-lang="en">EN</button>
+          <button class="lang-button" type="button" data-lang="zh">中文</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="hero-workspace">
+      <div class="question-panel">
+        <h2 data-i18n="heroTitle">Find out why a website feels slow.</h2>
+        <p class="hero-copy" data-i18n="heroCopy">Measure the real network path behind a website visit, then see which layer added the most visible delay.</p>
+
+        <div class="plain-steps" aria-label="How PacketScope works">
+          <div>
+            <span>1</span>
+            <strong data-i18n="stepOneTitle">Choose a website</strong>
+            <p data-i18n="stepOneCopy">Enter any public URL that you want to inspect.</p>
+          </div>
+          <div>
+            <span>2</span>
+            <strong data-i18n="stepTwoTitle">Measure the visit</strong>
+            <p data-i18n="stepTwoCopy">PacketScope checks DNS, TCP, TLS, HTTP, ping, and traceroute from this server.</p>
+          </div>
+          <div>
+            <span>3</span>
+            <strong data-i18n="stepThreeTitle">Read the bottleneck</strong>
+            <p data-i18n="stepThreeCopy">Start with the verdict, then inspect the evidence behind it.</p>
+          </div>
+        </div>
+      </div>
+
+      <section class="checkup-card" aria-label="Run a network checkup">
+        <div class="checkup-head">
+          <div>
+            <h2 data-i18n="checkupTitle">Check a website</h2>
+            <p data-i18n="checkupCopy">Run a live network measurement. Use Single for one URL, or Compare to measure two URLs side by side.</p>
+          </div>
+          <div class="mode-row" role="tablist" aria-label="Measurement mode">
+            <button class="mode-button active" type="button" data-mode="single" data-i18n="singleMode">One site</button>
+            <button class="mode-button" type="button" data-mode="compare" data-i18n="compareMode">Compare two</button>
+          </div>
+        </div>
+
+        <form id="measureForm" class="target-form">
+          <label class="target-field">
+            <span data-i18n="targetLabel">Website URL</span>
+            <input id="targetA" name="targetA" autocomplete="off" value="https://www.kean.edu" placeholder="https://www.kean.edu">
+          </label>
+          <label class="target-field compare-only" hidden>
+            <span data-i18n="targetBLabel">Second website URL</span>
+            <input id="targetB" name="targetB" autocomplete="off" value="https://github.com" placeholder="https://github.com">
+          </label>
+          <button class="run-button" type="button">
+            <span data-i18n="runButton">Run network check</span>
+          </button>
+        </form>
+
+        <div class="examples" aria-label="Examples">
+          <span data-i18n="examplesLabel">Examples</span>
+          <button type="button" data-example="https://www.kean.edu">Kean</button>
+          <button type="button" data-example="https://www.wku.edu.cn">WKU</button>
+          <button type="button" data-example="https://github.com">GitHub</button>
+          <button type="button" data-example="https://www.python.org">Python</button>
+          <button type="button" data-example="https://www.cloudflare.com">Cloudflare</button>
+        </div>
+
+        <div class="vantage-note">
+          <strong data-i18n="vantageTitle">Measurement location</strong>
+          <p data-i18n="originNote">Results reflect the PacketScope server's network location, so they may differ from measurements made on your own device.</p>
+        </div>
+      </section>
+    </section>
+
+    <section class="journey-overview" aria-label="Network journey">
+      <div class="section-title-row">
+        <div>
+          <h2 data-i18n="journeyTitle">How PacketScope breaks down a website visit</h2>
+        </div>
+        <p data-i18n="journeyCopy">Each measurement separates address lookup, connection setup, encryption, server response, round-trip delay, and route visibility.</p>
+      </div>
+      <div class="journey-track" id="journeyTrack"></div>
+    </section>
+
+    <section class="progress-surface" id="progressSurface" hidden>
+      <div class="progress-header">
+        <div>
+          <h2 data-i18n="pipelineTitle">PacketScope is measuring the network path.</h2>
+          <p id="progressCaption" data-i18n="progressCaption">Ping and traceroute can take longer because they wait for network replies.</p>
+        </div>
+        <div class="elapsed-card">
+          <span data-i18n="elapsedLabel">Elapsed</span>
+          <strong id="elapsedTimer">0.0s</strong>
+        </div>
+      </div>
+      <div class="overall-progress"><div id="overallProgressBar"></div></div>
+      <div class="pipeline" id="pipeline"></div>
+      <section class="execution-panel" aria-label="Live execution evidence">
+        <div class="execution-head">
+          <div>
+            <h3 data-i18n="executionTitle">Live execution log</h3>
+            <p data-i18n="executionCopy">These events come from the PacketScope server while it runs each network check.</p>
+          </div>
+          <strong id="streamStatus" data-i18n="streamIdle">Waiting</strong>
+        </div>
+        <div class="execution-log" id="executionLog"></div>
+      </section>
+    </section>
+
+    <section class="error-surface" id="errorSurface" hidden>
+      <strong data-i18n="errorTitle">Measurement error</strong>
+      <p id="errorText"></p>
+    </section>
+
+    <section class="results-surface" id="resultsSurface">
+      <div class="results-header">
+        <div>
+          <h2 data-i18n="resultsTitle">Measurement Results</h2>
+          <p data-i18n="resultsCopy">Review the verdict, compare the timing layers, and inspect the raw evidence.</p>
+        </div>
+        <div class="result-tools">
+          <button class="secondary-button" type="button" id="downloadJson" data-i18n="downloadJson">Download JSON</button>
+          <button class="secondary-button primary-report" type="button" id="downloadHtml" data-i18n="downloadHtml">Download HTML Report</button>
+        </div>
+      </div>
+
+      <section class="answer-card">
+        <div>
+          <span class="panel-label" data-i18n="answerKicker">Plain-language result</span>
+          <h2 id="answerHeadline"></h2>
+          <p id="findingText"></p>
+        </div>
+        <div class="answer-metric" id="winnerPill"></div>
+      </section>
+
+      <div class="summary-grid" id="summaryGrid"></div>
+
+      <section class="analysis-section compare-section">
+        <div class="compare-story">
+          <div>
+            <span class="panel-label" data-i18n="compareKicker">Side-by-side insight</span>
+            <h2 data-i18n="compareStoryTitle">Compare two public websites.</h2>
+            <p data-i18n="compareStoryCopy">When Compare is on, PacketScope measures both URLs with the same settings and highlights the lower visible-latency score.</p>
+          </div>
+          <div class="compare-result" id="compareInsight"></div>
+        </div>
+      </section>
+
+      <section class="analysis-section">
+        <div class="section-title-row">
+          <div>
+            <h2 data-i18n="stageTitle">Where the time went</h2>
+          </div>
+        </div>
+        <div class="stage-grid" id="stageGrid"></div>
+      </section>
+
+      <section class="analysis-section">
+        <div class="section-title-row">
+          <div>
+            <h2 data-i18n="conceptTitle">Course concepts connected to this run</h2>
+          </div>
+        </div>
+        <div class="concept-grid" id="conceptGrid"></div>
+      </section>
+
+      <section class="analysis-section">
+        <div class="section-title-row">
+          <div>
+            <h2 data-i18n="latencyTitle">Layer timing comparison</h2>
+          </div>
+        </div>
+        <div id="latencyCharts" class="chart-list"></div>
+      </section>
+
+      <section class="analysis-section">
+        <div class="section-title-row">
+          <div>
+            <h2 data-i18n="diagnosisTitle">Why PacketScope thinks this is the bottleneck</h2>
+          </div>
+        </div>
+        <div id="diagnosisList" class="diagnosis-list"></div>
+      </section>
+
+      <section class="analysis-section">
+        <div class="section-title-row">
+          <div>
+            <h2 data-i18n="routeVizTitle">Traceroute path visualization</h2>
+          </div>
+        </div>
+        <div id="routeViz" class="route-viz"></div>
+      </section>
+
+      <section class="analysis-section technical-section">
+        <details open>
+          <summary data-i18n="technicalSummary">Technica

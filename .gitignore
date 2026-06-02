@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.Python
+build/
+dist/
+
+# Virtualenv
+.venv/
+venv/
+env/
+
+# Editors / OS
+.DS_Store
+.vscode/
+.idea/
+
+# PacketScope generated artifacts (regenerate with `make demo`)
+reports/demo/
+reports/demo-v2/
+reports/local-preview/
+reports/mock-compare/
+reports/mock-demo/
+reports/mock-diagnosis/
+reports/mock-regenerated/
+reports/mock-runs/
+reports/mock-runs-regenerated/
+reports/mock-scan-runs/
+reports/real-runs/

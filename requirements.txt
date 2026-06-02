@@ -1,0 +1,3 @@
+# PacketScope intentionally uses only the Python standard library.
+# This empty requirements file is here so Render/Heroku-style Python
+# builders recognize the project as a pip-installable Python service.
