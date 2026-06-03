@@ -2,6 +2,10 @@
 
 PacketScope is a local-first Network Measurement & Diagnostic Toolkit for a computer networking course project. It measures what happens when a client visits a website, then turns the results into reproducible experiment artifacts and an explanation of the visible network bottlenecks.
 
+## Project Introduction
+
+PacketScope was developed as a Wenzhou-Kean University CPS 4222 course project under the guidance of Dr. Ken Ehimwenma, Ph.D. The project explores practical Internet measurement by combining DNS, TCP, TLS, HTTP, ping, and traceroute checks into a reproducible toolkit for classroom demonstrations and network-performance analysis.
+
 It measures:
 
 - DNS lookup time
